@@ -42,10 +42,16 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         )}
       >
         <div className="flex h-20 shrink-0 items-center gap-3 px-6 border-b border-sidebar-border/50">
-          <div className="bg-primary/20 p-2 rounded-xl">
-            <ShieldCheck className="h-7 w-7 text-primary" />
-          </div>
-          <span className="font-display text-xl font-bold tracking-wide">ClaimTrace</span>
+          <Link
+            href="/"
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <div className="bg-primary/20 p-2 rounded-xl">
+              <ShieldCheck className="h-7 w-7 text-primary" />
+            </div>
+            <span className="font-display text-xl font-bold tracking-wide">ClaimTrace</span>
+          </Link>
           <Button 
             variant="ghost" 
             size="icon" 
