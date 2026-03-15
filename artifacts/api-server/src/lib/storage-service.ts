@@ -2,7 +2,7 @@ import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
 
-interface AwsCredentials {
+export interface AwsCredentials {
   accessKeyId: string;
   secretAccessKey: string;
   region: string;
@@ -19,6 +19,28 @@ function createS3Client(credentials: AwsCredentials): S3Client {
       ...(credentials.sessionToken ? { sessionToken: credentials.sessionToken } : {}),
     },
   });
+}
+
+export async function uploadFileToS3(
+  claimId: string,
+  fileName: string,
+  mimeType: string,
+  fileBuffer: Buffer,
+  credentials: AwsCredentials
+): Promise<{ s3Key: string }> {
+  const s3Key = `claims/${claimId}/evidence/${uuidv4()}-${fileName}`;
+  const client = createS3Client(credentials);
+
+  const command = new PutObjectCommand({
+    Bucket: credentials.bucketName,
+    Key: s3Key,
+    ContentType: mimeType,
+    Body: fileBuffer,
+    ContentLength: fileBuffer.length,
+  });
+
+  await client.send(command);
+  return { s3Key };
 }
 
 export async function createPresignedUploadUrl(

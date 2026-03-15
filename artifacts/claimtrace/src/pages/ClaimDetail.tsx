@@ -7,9 +7,6 @@ import {
   useGetAuditTrail,
   useAnalyzeClaim,
   useSyncToPortal,
-  useGetUploadUrl,
-  useConfirmUpload,
-  ConfirmUploadInputFileType
 } from "@workspace/api-client-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,8 +34,6 @@ export default function ClaimDetail() {
 
   const { mutate: triggerAnalyze, isPending: isAnalyzing } = useAnalyzeClaim()
   const { mutate: syncPortal, isPending: isSyncing } = useSyncToPortal()
-  const { mutateAsync: getUrl } = useGetUploadUrl()
-  const { mutateAsync: confirmUpload } = useConfirmUpload()
 
   const [uploading, setUploading] = useState(false)
   const [credDialogOpen, setCredDialogOpen] = useState(false)
@@ -102,29 +97,19 @@ export default function ClaimDetail() {
     setUploading(true)
     try {
       for (const file of acceptedFiles) {
-        const fileTypeMap: Record<string, ConfirmUploadInputFileType> = {
-          "image/jpeg": "photo",
-          "image/png": "photo",
-          "application/pdf": "document",
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("awsCredentials", JSON.stringify(creds))
+
+        const response = await fetch(`/api/claims/${claimId}/evidence/upload`, {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: response.statusText }))
+          throw new Error(errorData.message || `Upload failed with status ${response.status}`)
         }
-        const mappedType = fileTypeMap[file.type] || "document"
-
-        const { uploadUrl, s3Key } = await getUrl({
-          claimId,
-          data: {
-            fileName: file.name,
-            fileType: mappedType,
-            mimeType: file.type,
-            awsCredentials: creds,
-          }
-        })
-
-        await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } })
-
-        await confirmUpload({
-          claimId,
-          data: { s3Key, fileName: file.name, fileType: mappedType, mimeType: file.type }
-        })
       }
       toast({ title: "Evidence uploaded successfully" })
       refetchEvidence()
