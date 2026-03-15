@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@workspace/db";
-import { claimsTable, auditEventsTable } from "@workspace/db/schema";
+import { claimsTable, auditEventsTable, type Claim } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
 import {
   CreateClaimBody,
@@ -17,8 +17,8 @@ router.get("/claims", async (_req, res) => {
   try {
     const claims = await db.select().from(claimsTable).orderBy(desc(claimsTable.createdAt));
     res.json(claims.map(formatClaim));
-  } catch (error: any) {
-    res.status(500).json({ error: "Failed to list claims", message: error.message });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to list claims", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
@@ -52,8 +52,8 @@ router.post("/claims", async (req, res) => {
     });
 
     res.status(201).json(formatClaim(claim));
-  } catch (error: any) {
-    res.status(400).json({ error: "Failed to create claim", message: error.message });
+  } catch (error) {
+    res.status(400).json({ error: "Failed to create claim", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
@@ -66,8 +66,8 @@ router.get("/claims/:claimId", async (req, res) => {
       return;
     }
     res.json(formatClaim(claim));
-  } catch (error: any) {
-    res.status(500).json({ error: "Failed to get claim", message: error.message });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get claim", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
@@ -76,7 +76,7 @@ router.patch("/claims/:claimId", async (req, res) => {
     const { claimId } = UpdateClaimParams.parse(req.params);
     const body = UpdateClaimBody.parse(req.body);
 
-    const updates: any = { updatedAt: new Date() };
+    const updates: Partial<Claim> & { updatedAt: Date } = { updatedAt: new Date() };
     if (body.title !== undefined) updates.title = body.title;
     if (body.narrative !== undefined) updates.narrative = body.narrative;
     if (body.policyText !== undefined) updates.policyText = body.policyText;
@@ -88,8 +88,8 @@ router.patch("/claims/:claimId", async (req, res) => {
       return;
     }
     res.json(formatClaim(claim));
-  } catch (error: any) {
-    res.status(400).json({ error: "Failed to update claim", message: error.message });
+  } catch (error) {
+    res.status(400).json({ error: "Failed to update claim", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
@@ -103,12 +103,12 @@ router.get("/claims/:claimId/audit", async (req, res) => {
       ...e,
       timestamp: e.timestamp.toISOString(),
     })));
-  } catch (error: any) {
-    res.status(500).json({ error: "Failed to get audit trail", message: error.message });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get audit trail", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
-function formatClaim(claim: any) {
+function formatClaim(claim: Claim) {
   return {
     ...claim,
     createdAt: claim.createdAt instanceof Date ? claim.createdAt.toISOString() : claim.createdAt,

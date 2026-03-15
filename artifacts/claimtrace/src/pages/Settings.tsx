@@ -14,13 +14,13 @@ export default function Settings() {
       onSuccess: () => {
         toast({ title: "Demo data seeded", description: "3 sample claims have been generated." })
       },
-      onError: (err: any) => {
+      onError: (err: Error) => {
         toast({ title: "Seeding failed", description: err.message, variant: "destructive" })
       }
     })
   }
 
-  const ServiceCard = ({ name, icon: Icon, info }: { name: string, icon: any, info?: any }) => (
+  const ServiceCard = ({ name, icon: Icon, info }: { name: string, icon: React.ElementType, info?: { connected?: boolean; error?: string } }) => (
     <Card className="border-border/50 shadow-sm">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <div className="flex items-center gap-3">

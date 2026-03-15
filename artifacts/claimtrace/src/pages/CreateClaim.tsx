@@ -46,7 +46,7 @@ export default function CreateClaim() {
         })
         setLocation(`/claims/${res.id}`)
       },
-      onError: (err: any) => {
+      onError: (err: Error) => {
         toast({
           title: "Failed to create claim",
           description: err.message || "An unexpected error occurred",

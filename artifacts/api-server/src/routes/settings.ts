@@ -24,8 +24,8 @@ router.get("/settings/status", async (_req, res) => {
       modelId: getModelId(),
       region: getRegion(),
     });
-  } catch (error: any) {
-    res.status(500).json({ error: "Failed to check status", message: error.message });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to check status", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 

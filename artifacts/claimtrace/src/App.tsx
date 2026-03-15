@@ -22,7 +22,6 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  // In a real app, check auth here. For this MVP, we wrap with the App Shell.
   return (
     <Shell>
       <Component />

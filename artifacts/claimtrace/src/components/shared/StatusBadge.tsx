@@ -1,8 +1,10 @@
 import { Badge } from "@/components/ui/badge"
 import { ClaimStatus, ClaimRecommendation, PortalRecordDecision, PortalRecordPortalStatus } from "@workspace/api-client-react"
 
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info"
+
 export function ClaimStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; variant: any }> = {
+  const map: Record<string, { label: string; variant: BadgeVariant }> = {
     [ClaimStatus.draft]: { label: "Draft", variant: "secondary" },
     [ClaimStatus.evidence_uploaded]: { label: "Evidence Ready", variant: "info" },
     [ClaimStatus.analyzing]: { label: "Analyzing...", variant: "warning" },
@@ -16,7 +18,7 @@ export function ClaimStatusBadge({ status }: { status: string }) {
 }
 
 export function RecommendationBadge({ recommendation }: { recommendation: string }) {
-  const map: Record<string, { label: string; variant: any }> = {
+  const map: Record<string, { label: string; variant: BadgeVariant }> = {
     [ClaimRecommendation.approve]: { label: "Approve", variant: "success" },
     [ClaimRecommendation.reject]: { label: "Reject", variant: "destructive" },
     [ClaimRecommendation.human_review]: { label: "Human Review", variant: "warning" },
@@ -28,7 +30,7 @@ export function RecommendationBadge({ recommendation }: { recommendation: string
 }
 
 export function PortalStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; variant: any }> = {
+  const map: Record<string, { label: string; variant: BadgeVariant }> = {
     [PortalRecordPortalStatus.pending]: { label: "Pending", variant: "warning" },
     [PortalRecordPortalStatus.synced]: { label: "Synced", variant: "success" },
     [PortalRecordPortalStatus.rejected]: { label: "Rejected", variant: "destructive" },

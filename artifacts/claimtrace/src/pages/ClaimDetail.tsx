@@ -55,11 +55,8 @@ export default function ClaimDetail() {
           data: { fileName: file.name, fileType: mappedType, mimeType: file.type } 
         })
         
-        // 2. Mock PUT to S3 (in a real app this uses the presigned URL directly)
-        // await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } })
-        await new Promise(r => setTimeout(r, 800)) // simulate upload delay
+        await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } })
 
-        // 3. Confirm metadata
         await confirmUpload({ 
           claimId, 
           data: { s3Key, fileName: file.name, fileType: mappedType, mimeType: file.type } 
@@ -68,8 +65,8 @@ export default function ClaimDetail() {
       toast({ title: "Evidence uploaded successfully" })
       refetchEvidence()
       refetchClaim()
-    } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" })
+    } catch (err) {
+      toast({ title: "Upload failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" })
     } finally {
       setUploading(false)
     }
@@ -84,7 +81,7 @@ export default function ClaimDetail() {
         refetchAnalysis()
         refetchClaim()
       },
-      onError: (err: any) => toast({ title: "Analysis failed", description: err.message, variant: "destructive" })
+      onError: (err: Error) => toast({ title: "Analysis failed", description: err.message, variant: "destructive" })
     })
   }
 
@@ -95,7 +92,7 @@ export default function ClaimDetail() {
         toast({ title: "Synced to Portal", description: "Decision successfully pushed to internal portal." })
         refetchClaim()
       },
-      onError: (err: any) => toast({ title: "Sync failed", description: err.message, variant: "destructive" })
+      onError: (err: Error) => toast({ title: "Sync failed", description: err.message, variant: "destructive" })
     })
   }
 

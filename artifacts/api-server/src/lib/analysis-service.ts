@@ -80,7 +80,7 @@ async function invokeNova(prompt: string): Promise<string> {
   throw new Error("Unexpected response format from Bedrock");
 }
 
-function extractJsonFromResponse(text: string): any {
+function extractJsonFromResponse(text: string): Record<string, unknown> {
   const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
     return JSON.parse(jsonMatch[1].trim());
@@ -159,35 +159,36 @@ Respond with ONLY valid JSON in this exact format:
     const parsed = extractJsonFromResponse(rawOutput);
 
     return {
-      summary: parsed.summary || "Analysis completed",
+      summary: typeof parsed.summary === "string" ? parsed.summary : "Analysis completed",
       recommendation: validateRecommendation(parsed.recommendation),
-      contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions : [],
-      missingEvidence: Array.isArray(parsed.missingEvidence) ? parsed.missingEvidence : [],
-      extractedFacts: Array.isArray(parsed.extractedFacts) ? parsed.extractedFacts.map(validateFact) : [],
-      timeline: Array.isArray(parsed.timeline) ? parsed.timeline.map(validateTimelineEvent) : [],
+      contradictions: Array.isArray(parsed.contradictions) ? parsed.contradictions.map(String) : [],
+      missingEvidence: Array.isArray(parsed.missingEvidence) ? parsed.missingEvidence.map(String) : [],
+      extractedFacts: Array.isArray(parsed.extractedFacts) ? parsed.extractedFacts.map((f: Record<string, unknown>) => validateFact(f)) : [],
+      timeline: Array.isArray(parsed.timeline) ? parsed.timeline.map((t: Record<string, unknown>) => validateTimelineEvent(t)) : [],
       confidenceScore: typeof parsed.confidenceScore === "number" ? Math.min(1, Math.max(0, parsed.confidenceScore)) : 0.5,
       rawOutput,
     };
-  } catch (error: any) {
-    throw new Error(`Analysis failed: ${error.message}`);
+  } catch (error) {
+    throw new Error(`Analysis failed: ${(error instanceof Error ? error.message : String(error))}`);
   }
 }
 
-function validateRecommendation(rec: any): "approve" | "reject" | "human_review" {
-  if (["approve", "reject", "human_review"].includes(rec)) return rec;
+function validateRecommendation(rec: unknown): "approve" | "reject" | "human_review" {
+  if (typeof rec === "string" && ["approve", "reject", "human_review"].includes(rec)) return rec as "approve" | "reject" | "human_review";
   return "human_review";
 }
 
-function validateFact(fact: any): ExtractedFact {
+function validateFact(fact: Record<string, unknown>): ExtractedFact {
+  const confidence = String(fact.confidence || "low");
   return {
     label: String(fact.label || "Unknown"),
     value: String(fact.value || ""),
     source: String(fact.source || "Unknown"),
-    confidence: ["high", "medium", "low"].includes(fact.confidence) ? fact.confidence : "low",
+    confidence: (["high", "medium", "low"].includes(confidence) ? confidence : "low") as "high" | "medium" | "low",
   };
 }
 
-function validateTimelineEvent(event: any): TimelineEvent {
+function validateTimelineEvent(event: Record<string, unknown>): TimelineEvent {
   return {
     date: String(event.date || "Unknown"),
     event: String(event.event || ""),
@@ -206,8 +207,8 @@ export async function checkBedrockConnection(): Promise<{ configured: boolean; c
   try {
     getBedrockClient();
     return { configured: true, connected: true };
-  } catch (e: any) {
-    return { configured: true, connected: false, error: e.message };
+  } catch (e) {
+    return { configured: true, connected: false, error: (e instanceof Error ? e.message : String(e)) };
   }
 }
 

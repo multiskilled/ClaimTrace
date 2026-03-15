@@ -212,8 +212,8 @@ router.post("/seed", async (_req, res) => {
     ]);
 
     res.json({ message: "Demo data seeded successfully", claimIds });
-  } catch (error: any) {
-    res.status(500).json({ error: "Failed to seed demo data", message: error.message });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to seed demo data", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 

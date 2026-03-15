@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@workspace/db";
-import { evidenceTable, auditEventsTable, claimsTable } from "@workspace/db/schema";
+import { evidenceTable, auditEventsTable, claimsTable, type EvidenceItem } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import {
   ListEvidenceParams,
@@ -19,8 +19,8 @@ router.get("/claims/:claimId/evidence", async (req, res) => {
     const { claimId } = ListEvidenceParams.parse(req.params);
     const items = await db.select().from(evidenceTable).where(eq(evidenceTable.claimId, claimId));
     res.json(items.map(formatEvidence));
-  } catch (error: any) {
-    res.status(500).json({ error: "Failed to list evidence", message: error.message });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to list evidence", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
@@ -31,8 +31,8 @@ router.post("/claims/:claimId/evidence/upload-url", async (req, res) => {
 
     const { uploadUrl, s3Key } = await createPresignedUploadUrl(claimId, body.fileName, body.mimeType);
     res.json({ uploadUrl, s3Key });
-  } catch (error: any) {
-    res.status(400).json({ error: "Failed to generate upload URL", message: error.message });
+  } catch (error) {
+    res.status(400).json({ error: "Failed to generate upload URL", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
@@ -69,12 +69,12 @@ router.post("/claims/:claimId/evidence/confirm", async (req, res) => {
     });
 
     res.status(201).json(formatEvidence(item));
-  } catch (error: any) {
-    res.status(400).json({ error: "Failed to confirm upload", message: error.message });
+  } catch (error) {
+    res.status(400).json({ error: "Failed to confirm upload", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
-function formatEvidence(item: any) {
+function formatEvidence(item: EvidenceItem) {
   return {
     ...item,
     uploadedAt: item.uploadedAt instanceof Date ? item.uploadedAt.toISOString() : item.uploadedAt,

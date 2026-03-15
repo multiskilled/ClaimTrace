@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@workspace/db";
-import { portalRecordsTable, claimsTable, auditEventsTable } from "@workspace/db/schema";
+import { portalRecordsTable, claimsTable, auditEventsTable, type PortalRecord } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { SyncToPortalParams, SyncToPortalBody } from "@workspace/api-zod";
 
@@ -56,8 +56,8 @@ router.post("/claims/:claimId/portal-sync", async (req, res) => {
     });
 
     res.json(formatPortalRecord(record));
-  } catch (error: any) {
-    res.status(400).json({ error: "Failed to sync to portal", message: error.message });
+  } catch (error) {
+    res.status(400).json({ error: "Failed to sync to portal", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
@@ -65,12 +65,12 @@ router.get("/portal/records", async (_req, res) => {
   try {
     const records = await db.select().from(portalRecordsTable).orderBy(desc(portalRecordsTable.syncedAt));
     res.json(records.map(formatPortalRecord));
-  } catch (error: any) {
-    res.status(500).json({ error: "Failed to list portal records", message: error.message });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to list portal records", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
-function formatPortalRecord(record: any) {
+function formatPortalRecord(record: PortalRecord) {
   return {
     ...record,
     syncedAt: record.syncedAt instanceof Date ? record.syncedAt.toISOString() : record.syncedAt,

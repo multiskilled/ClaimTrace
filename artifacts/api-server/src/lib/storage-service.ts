@@ -67,7 +67,7 @@ export async function checkS3Connection(): Promise<{ configured: boolean; connec
   try {
     getS3Client();
     return { configured: true, connected: true };
-  } catch (e: any) {
-    return { configured: true, connected: false, error: e.message };
+  } catch (e) {
+    return { configured: true, connected: false, error: (e instanceof Error ? e.message : String(e)) };
   }
 }

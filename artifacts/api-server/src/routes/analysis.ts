@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@workspace/db";
-import { analysisRunsTable, claimsTable, evidenceTable, auditEventsTable } from "@workspace/db/schema";
+import { analysisRunsTable, claimsTable, evidenceTable, auditEventsTable, type AnalysisRun } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { AnalyzeClaimParams, GetAnalysisParams } from "@workspace/api-zod";
 import { analyzeClaim, getModelId } from "../lib/analysis-service";
@@ -87,8 +87,8 @@ router.post("/claims/:claimId/analyze", async (req, res) => {
     });
 
     res.json(formatAnalysisRun(run));
-  } catch (error: any) {
-    res.status(500).json({ error: "Analysis failed", message: error.message });
+  } catch (error) {
+    res.status(500).json({ error: "Analysis failed", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
@@ -105,12 +105,12 @@ router.get("/claims/:claimId/analysis", async (req, res) => {
       return;
     }
     res.json(formatAnalysisRun(run));
-  } catch (error: any) {
-    res.status(500).json({ error: "Failed to get analysis", message: error.message });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get analysis", message: (error instanceof Error ? error.message : String(error)) });
   }
 });
 
-function formatAnalysisRun(run: any) {
+function formatAnalysisRun(run: AnalysisRun) {
   return {
     ...run,
     startedAt: run.startedAt instanceof Date ? run.startedAt.toISOString() : run.startedAt,
