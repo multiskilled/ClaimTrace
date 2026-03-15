@@ -303,10 +303,10 @@ paths:
     get:
       operationId: getSettingsStatus
       tags: [settings]
-      summary: Get AWS connection status
+      summary: Get application status
       responses:
         "200":
-          description: AWS service status
+          description: Application status
           content:
             application/json:
               schema:

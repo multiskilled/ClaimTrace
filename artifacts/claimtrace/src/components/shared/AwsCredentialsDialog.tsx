@@ -90,6 +90,8 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, initialCre
     }
     if (saveForBrowser) {
       saveCredentials(creds)
+    } else {
+      clearCredentials()
     }
     onConfirm(creds)
     onOpenChange(false)
