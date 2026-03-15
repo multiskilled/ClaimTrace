@@ -232,34 +232,30 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, onClear, i
                     <span className="bg-primary/10 text-primary rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
                     <div>
                       <p className="font-medium text-foreground mb-0.5">Create an IAM Access Key</p>
-                      <p>Sign in to <strong>console.aws.amazon.com</strong> → IAM → Users → your user → <em>Security credentials</em> tab → <em>Create access key</em>. Choose "Application running outside AWS". Copy both the Access Key ID and Secret Access Key.</p>
+                      <p>Sign in to <strong>console.aws.amazon.com</strong> → IAM → Users → your user → <em>Security credentials</em> tab → <em>Create access key</em>. Choose "Application running outside AWS". Copy both keys — the secret is shown only once.</p>
                     </div>
                   </li>
                   <li className="flex gap-3">
                     <span className="bg-primary/10 text-primary rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
                     <div>
                       <p className="font-medium text-foreground mb-0.5">Create an S3 Bucket</p>
-                      <p>Go to <strong>S3 console</strong> → <em>Create bucket</em>. Choose a unique name and select the same region you'll use for Bedrock (e.g. <code className="bg-muted px-1 rounded text-xs">us-east-1</code>). Leave other settings as default.</p>
+                      <p>Go to <strong>S3 console</strong> → <em>Create bucket</em>. Choose a unique name in a US region (e.g. <code className="bg-muted px-1 rounded text-xs">us-east-1</code>). Leave other settings as default.</p>
                     </div>
                   </li>
                   <li className="flex gap-3">
                     <span className="bg-primary/10 text-primary rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
                     <div>
-                      <p className="font-medium text-foreground mb-0.5">Enable Amazon Bedrock Nova Lite</p>
-                      <p>Go to <strong>Amazon Bedrock console</strong> → <em>Model access</em> → find <em>Amazon Nova Lite</em> → click <em>Manage model access</em> and request access. This takes a few minutes.</p>
-                    </div>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="bg-primary/10 text-primary rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</span>
-                    <div>
                       <p className="font-medium text-foreground mb-0.5">Attach IAM Permissions</p>
-                      <p>Attach an inline policy to your IAM user granting:</p>
-                      <pre className="bg-muted rounded-lg p-3 text-xs mt-2 overflow-x-auto whitespace-pre-wrap">{`{
+                      <p className="mb-2">Attach an inline policy to your IAM user. Amazon Nova Lite is now accessed via cross-region inference — no manual model access approval is needed.</p>
+                      <pre className="bg-muted rounded-lg p-3 text-xs overflow-x-auto whitespace-pre-wrap">{`{
   "Version": "2012-10-17",
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": ["bedrock:InvokeModel"],
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
       "Resource": "*"
     },
     {
@@ -269,6 +265,13 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, onClear, i
     }
   ]
 }`}</pre>
+                    </div>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="bg-primary/10 text-primary rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</span>
+                    <div>
+                      <p className="font-medium text-foreground mb-0.5">Use a US region</p>
+                      <p>Enter <code className="bg-muted px-1 rounded text-xs">us-east-1</code> or <code className="bg-muted px-1 rounded text-xs">us-west-2</code> as your region — Nova Lite cross-region inference is only available in US regions.</p>
                     </div>
                   </li>
                 </ol>

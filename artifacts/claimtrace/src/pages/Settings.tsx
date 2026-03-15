@@ -169,26 +169,20 @@ export default function Settings() {
             </li>
             <li className="flex gap-4">
               <span className="bg-primary/10 text-primary rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">3</span>
-              <div className="space-y-1">
-                <p className="font-semibold text-foreground">Enable Amazon Bedrock Nova Lite</p>
-                <p className="text-sm text-muted-foreground">
-                  Go to <strong>Amazon Bedrock console</strong> → <em>Model access</em> (left sidebar) → click <em>Manage model access</em> → find <strong>Amazon Nova Lite</strong> → check the box and click <em>Save changes</em>. Access is typically granted within a few minutes.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-4">
-              <span className="bg-primary/10 text-primary rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">4</span>
               <div className="space-y-2">
                 <p className="font-semibold text-foreground">Attach IAM Permissions</p>
                 <p className="text-sm text-muted-foreground">
-                  In IAM → your user → <em>Add permissions</em> → <em>Create inline policy</em> → JSON editor. Paste this policy (replace <code className="bg-muted px-1 rounded text-xs">YOUR-BUCKET-NAME</code>):
+                  In IAM → your user → <em>Add permissions</em> → <em>Create inline policy</em> → JSON editor. Paste this policy (replace <code className="bg-muted px-1 rounded text-xs">YOUR-BUCKET-NAME</code>). Amazon Nova Lite is accessed via <strong>cross-region inference</strong> — no manual model access approval is required.
                 </p>
                 <pre className="bg-muted rounded-xl p-4 text-xs overflow-x-auto whitespace-pre">{`{
   "Version": "2012-10-17",
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": ["bedrock:InvokeModel"],
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
       "Resource": "*"
     },
     {
@@ -198,6 +192,15 @@ export default function Settings() {
     }
   ]
 }`}</pre>
+              </div>
+            </li>
+            <li className="flex gap-4">
+              <span className="bg-primary/10 text-primary rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">4</span>
+              <div className="space-y-1">
+                <p className="font-semibold text-foreground">Use a US region</p>
+                <p className="text-sm text-muted-foreground">
+                  Enter <code className="bg-muted px-1 rounded text-xs">us-east-1</code> or <code className="bg-muted px-1 rounded text-xs">us-west-2</code> as your region. Nova Lite uses AWS cross-region inference profiles, which are only available in US regions. Your S3 bucket should be in the same region.
+                </p>
               </div>
             </li>
           </ol>

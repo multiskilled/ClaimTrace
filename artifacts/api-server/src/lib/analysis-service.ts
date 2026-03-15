@@ -1,6 +1,6 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 
-const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || "amazon.nova-lite-v1:0";
+const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || "us.amazon.nova-lite-v1:0";
 
 interface AwsCredentials {
   accessKeyId: string;
@@ -156,7 +156,12 @@ Respond with ONLY valid JSON in this exact format:
 
   try {
     const rawOutput = await invokeNova(prompt, credentials);
-    const parsed = extractJsonFromResponse(rawOutput);
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = extractJsonFromResponse(rawOutput);
+    } catch {
+      throw new Error(`Model returned an unexpected response format. Raw output: ${rawOutput.slice(0, 500)}`);
+    }
 
     return {
       summary: typeof parsed.summary === "string" ? parsed.summary : "Analysis completed",
