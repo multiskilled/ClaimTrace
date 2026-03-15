@@ -8,7 +8,9 @@
 
 export * from "./analysisRun";
 export * from "./analysisRunRecommendation";
+export * from "./analyzeClaimInput";
 export * from "./auditEvent";
+export * from "./awsCredentials";
 export * from "./claim";
 export * from "./claimClaimType";
 export * from "./claimRecommendation";

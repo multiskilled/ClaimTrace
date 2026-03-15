@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRoute } from "wouter"
 import { 
   useGetClaimById, 
@@ -12,24 +12,25 @@ import {
   ConfirmUploadInputFileType
 } from "@workspace/api-client-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ClaimStatusBadge, RecommendationBadge } from "@/components/shared/StatusBadge"
 import { format } from "date-fns"
-import { Loader2, BrainCircuit, UploadCloud, AlertTriangle, FileCheck2, ArrowRightLeft, Clock, Search } from "lucide-react"
+import { Loader2, BrainCircuit, UploadCloud, AlertTriangle, FileCheck2, ArrowRightLeft, Clock, Search, Settings2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useDropzone } from "react-dropzone"
 import { cn } from "@/lib/utils"
+import { AwsCredentialsDialog, loadSavedCredentials, type AwsCredentials } from "@/components/shared/AwsCredentialsDialog"
 
 export default function ClaimDetail() {
   const [, params] = useRoute("/claims/:id")
   const claimId = params?.id || ""
   const { toast } = useToast()
-  
+
   const { data: claim, isLoading: loadingClaim, refetch: refetchClaim } = useGetClaimById(claimId)
   const { data: evidence, isLoading: loadingEvidence, refetch: refetchEvidence } = useListEvidence(claimId)
-  const { data: analysis, isLoading: loadingAnalysis, refetch: refetchAnalysis } = useGetAnalysis(claimId)
-  const { data: audit, isLoading: loadingAudit } = useGetAuditTrail(claimId)
+  const { data: analysis, refetch: refetchAnalysis } = useGetAnalysis(claimId)
+  const { data: audit } = useGetAuditTrail(claimId)
 
   const { mutate: triggerAnalyze, isPending: isAnalyzing } = useAnalyzeClaim()
   const { mutate: syncPortal, isPending: isSyncing } = useSyncToPortal()
@@ -37,29 +38,84 @@ export default function ClaimDetail() {
   const { mutateAsync: confirmUpload } = useConfirmUpload()
 
   const [uploading, setUploading] = useState(false)
+  const [credDialogOpen, setCredDialogOpen] = useState(false)
+  const [pendingAnalysis, setPendingAnalysis] = useState(false)
+  const [awsCreds, setAwsCreds] = useState<AwsCredentials | null>(null)
+
+  useEffect(() => {
+    setAwsCreds(loadSavedCredentials())
+  }, [])
+
+  const runAnalysisWithCreds = (creds: AwsCredentials) => {
+    triggerAnalyze({ claimId, data: { awsCredentials: creds } }, {
+      onSuccess: () => {
+        toast({ title: "Analysis complete", description: "Nova Lite generated new insights." })
+        refetchAnalysis()
+        refetchClaim()
+      },
+      onError: (err: Error) => toast({ title: "Analysis failed", description: err.message, variant: "destructive" })
+    })
+  }
+
+  const handleAnalyze = () => {
+    const creds = awsCreds ?? loadSavedCredentials()
+    if (!creds) {
+      setPendingAnalysis(true)
+      setCredDialogOpen(true)
+      return
+    }
+    runAnalysisWithCreds(creds)
+  }
+
+  const handleCredDialogConfirm = (creds: AwsCredentials) => {
+    setAwsCreds(creds)
+    if (pendingAnalysis) {
+      setPendingAnalysis(false)
+      runAnalysisWithCreds(creds)
+    }
+  }
+
+  const handleCredDialogChange = (open: boolean) => {
+    setCredDialogOpen(open)
+    if (!open) setPendingAnalysis(false)
+  }
 
   const onDrop = async (acceptedFiles: File[]) => {
+    const creds = awsCreds ?? loadSavedCredentials()
+    if (!creds) {
+      toast({
+        title: "AWS credentials required",
+        description: "Go to Settings and configure your AWS credentials to upload evidence files.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setUploading(true)
     try {
       for (const file of acceptedFiles) {
-        // 1. Get presigned URL
         const fileTypeMap: Record<string, ConfirmUploadInputFileType> = {
           "image/jpeg": "photo",
           "image/png": "photo",
           "application/pdf": "document",
         }
         const mappedType = fileTypeMap[file.type] || "document"
-        
-        const { uploadUrl, s3Key } = await getUrl({ 
-          claimId, 
-          data: { fileName: file.name, fileType: mappedType, mimeType: file.type } 
+
+        const { uploadUrl, s3Key } = await getUrl({
+          claimId,
+          data: {
+            fileName: file.name,
+            fileType: mappedType,
+            mimeType: file.type,
+            awsCredentials: creds,
+          }
         })
-        
+
         await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } })
 
-        await confirmUpload({ 
-          claimId, 
-          data: { s3Key, fileName: file.name, fileType: mappedType, mimeType: file.type } 
+        await confirmUpload({
+          claimId,
+          data: { s3Key, fileName: file.name, fileType: mappedType, mimeType: file.type }
         })
       }
       toast({ title: "Evidence uploaded successfully" })
@@ -73,17 +129,6 @@ export default function ClaimDetail() {
   }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
-
-  const handleAnalyze = () => {
-    triggerAnalyze({ claimId }, {
-      onSuccess: () => {
-        toast({ title: "Analysis complete", description: "Nova Lite generated new insights." })
-        refetchAnalysis()
-        refetchClaim()
-      },
-      onError: (err: Error) => toast({ title: "Analysis failed", description: err.message, variant: "destructive" })
-    })
-  }
 
   const handleSync = () => {
     if (!analysis) return
@@ -106,6 +151,12 @@ export default function ClaimDetail() {
 
   return (
     <div className="space-y-6 pb-20">
+      <AwsCredentialsDialog
+        open={credDialogOpen}
+        onOpenChange={handleCredDialogChange}
+        onConfirm={handleCredDialogConfirm}
+      />
+
       {/* Header Panel */}
       <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row justify-between gap-6 items-start lg:items-center">
         <div>
@@ -122,19 +173,30 @@ export default function ClaimDetail() {
             <span>Order: {claim.orderId}</span>
           </div>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          <Button 
-            variant="outline" 
-            onClick={handleAnalyze} 
-            disabled={isAnalyzing || (evidence?.length === 0)}
-            className="rounded-xl border-primary/20 hover:bg-primary/5 hover:text-primary"
-          >
-            {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4 text-primary" />}
-            Run AI Analysis
-          </Button>
-          <Button 
-            onClick={handleSync} 
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleAnalyze}
+              disabled={isAnalyzing || (evidence?.length === 0)}
+              className="rounded-xl border-primary/20 hover:bg-primary/5 hover:text-primary flex-1 sm:flex-none"
+            >
+              {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4 text-primary" />}
+              Run AI Analysis
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCredDialogOpen(true)}
+              title={awsCreds ? `AWS configured (${awsCreds.accessKeyId.slice(0, 8)}…)` : "Configure AWS credentials"}
+              className={cn("rounded-xl border border-border/50 shrink-0", awsCreds ? "text-success" : "text-muted-foreground")}
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button
+            onClick={handleSync}
             disabled={isSyncing || claim.status !== "analyzed"}
             className="rounded-xl shadow-lg shadow-primary/20"
           >
@@ -155,7 +217,7 @@ export default function ClaimDetail() {
               <TabsTrigger value="timeline" className="rounded-lg h-10 px-6 data-[state=active]:shadow-sm" disabled={!analysis?.timeline}>Timeline</TabsTrigger>
               <TabsTrigger value="audit" className="rounded-lg h-10 px-6 data-[state=active]:shadow-sm">Audit Trail</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="overview" className="mt-6 space-y-6 outline-none">
               <Card className="border-border/50 shadow-sm">
                 <CardHeader className="bg-muted/20 border-b border-border/50 rounded-t-xl">
@@ -179,8 +241,8 @@ export default function ClaimDetail() {
             </TabsContent>
 
             <TabsContent value="evidence" className="mt-6 outline-none">
-              <div 
-                {...getRootProps()} 
+              <div
+                {...getRootProps()}
                 className={cn(
                   "border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200 cursor-pointer bg-card mb-6",
                   isDragActive ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/50 hover:bg-muted/30"
@@ -196,6 +258,11 @@ export default function ClaimDetail() {
                 <p className="text-muted-foreground text-sm max-w-sm mx-auto">
                   Drag and drop receipts, chat logs, or damage photos. Amazon Nova will analyze them automatically.
                 </p>
+                {!awsCreds && (
+                  <p className="text-xs text-destructive mt-3 font-medium">
+                    AWS credentials required — configure in Settings first
+                  </p>
+                )}
                 <Button variant="outline" className="mt-6 rounded-full" disabled={uploading}>
                   Browse Files
                 </Button>
@@ -283,8 +350,8 @@ export default function ClaimDetail() {
                               <td className="px-6 py-3">
                                 <span className={cn(
                                   "px-2 py-1 rounded-md text-xs font-semibold uppercase",
-                                  fact.confidence === "high" ? "bg-success/15 text-success" : 
-                                  fact.confidence === "medium" ? "bg-warning/15 text-warning-foreground" : 
+                                  fact.confidence === "high" ? "bg-success/15 text-success" :
+                                  fact.confidence === "medium" ? "bg-warning/15 text-warning-foreground" :
                                   "bg-destructive/15 text-destructive"
                                 )}>
                                   {fact.confidence}
@@ -305,24 +372,24 @@ export default function ClaimDetail() {
             </TabsContent>
 
             <TabsContent value="timeline" className="mt-6 outline-none">
-               <Card className="border-border/50 p-6">
-                 <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-                    {analysis?.timeline?.map((event, i) => (
-                      <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-primary text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                          <Clock className="h-4 w-4" />
-                        </div>
-                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-border/50 bg-card shadow-sm">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold text-foreground">{event.date}</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">{event.event}</div>
-                          <div className="mt-3 text-xs font-mono text-primary/70 bg-primary/5 inline-block px-2 py-1 rounded">Src: {event.source}</div>
-                        </div>
+              <Card className="border-border/50 p-6">
+                <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                  {analysis?.timeline?.map((event, i) => (
+                    <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-primary text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        <Clock className="h-4 w-4" />
                       </div>
-                    ))}
-                 </div>
-               </Card>
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-border/50 bg-card shadow-sm">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold text-foreground">{event.date}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">{event.event}</div>
+                        <div className="mt-3 text-xs font-mono text-primary/70 bg-primary/5 inline-block px-2 py-1 rounded">Src: {event.source}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </TabsContent>
 
             <TabsContent value="audit" className="mt-6 outline-none">
@@ -358,14 +425,14 @@ export default function ClaimDetail() {
                   <div className="flex justify-center py-4">
                     <RecommendationBadge recommendation={analysis.recommendation} />
                   </div>
-                  
+
                   <div>
                     <div className="flex justify-between text-sm mb-2 font-medium">
                       <span>Confidence Score</span>
                       <span className="text-primary">{Math.round(analysis.confidenceScore * 100)}%</span>
                     </div>
                     <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={cn(
                           "h-full rounded-full transition-all duration-1000",
                           analysis.confidenceScore > 0.8 ? "bg-success" : analysis.confidenceScore > 0.5 ? "bg-warning" : "bg-destructive"

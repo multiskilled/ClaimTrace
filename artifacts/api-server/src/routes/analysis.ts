@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "@workspace/db";
 import { analysisRunsTable, claimsTable, evidenceTable, auditEventsTable, type AnalysisRun } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { AnalyzeClaimParams, GetAnalysisParams } from "@workspace/api-zod";
+import { AnalyzeClaimParams, AnalyzeClaimBody, GetAnalysisParams } from "@workspace/api-zod";
 import { analyzeClaim, getModelId } from "../lib/analysis-service";
 
 const router: IRouter = Router();
@@ -11,6 +11,13 @@ const router: IRouter = Router();
 router.post("/claims/:claimId/analyze", async (req, res) => {
   try {
     const { claimId } = AnalyzeClaimParams.parse(req.params);
+
+    const bodyResult = AnalyzeClaimBody.safeParse(req.body);
+    if (!bodyResult.success) {
+      res.status(400).json({ error: "Missing credentials", message: "awsCredentials (accessKeyId, secretAccessKey, region, s3BucketName) are required." });
+      return;
+    }
+    const { awsCredentials } = bodyResult.data;
 
     const [claim] = await db.select().from(claimsTable).where(eq(claimsTable.id, claimId));
     if (!claim) {
@@ -46,7 +53,13 @@ router.post("/claims/:claimId/analyze", async (req, res) => {
       claim.orderId,
       claim.narrative,
       claim.policyText,
-      evidenceDescriptions
+      evidenceDescriptions,
+      {
+        accessKeyId: awsCredentials.accessKeyId,
+        secretAccessKey: awsCredentials.secretAccessKey,
+        region: awsCredentials.region,
+        sessionToken: awsCredentials.sessionToken,
+      }
     );
 
     const runId = uuidv4();

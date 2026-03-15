@@ -27,9 +27,20 @@ router.get("/claims/:claimId/evidence", async (req, res) => {
 router.post("/claims/:claimId/evidence/upload-url", async (req, res) => {
   try {
     const { claimId } = GetUploadUrlParams.parse(req.params);
-    const body = GetUploadUrlBody.parse(req.body);
+    const bodyResult = GetUploadUrlBody.safeParse(req.body);
+    if (!bodyResult.success) {
+      res.status(400).json({ error: "Missing credentials", message: "awsCredentials (accessKeyId, secretAccessKey, region, s3BucketName) are required." });
+      return;
+    }
+    const body = bodyResult.data;
 
-    const { uploadUrl, s3Key } = await createPresignedUploadUrl(claimId, body.fileName, body.mimeType);
+    const { uploadUrl, s3Key } = await createPresignedUploadUrl(claimId, body.fileName, body.mimeType, {
+      accessKeyId: body.awsCredentials.accessKeyId,
+      secretAccessKey: body.awsCredentials.secretAccessKey,
+      region: body.awsCredentials.region,
+      sessionToken: body.awsCredentials.sessionToken,
+      bucketName: body.awsCredentials.s3BucketName,
+    });
     res.json({ uploadUrl, s3Key });
   } catch (error) {
     res.status(400).json({ error: "Failed to generate upload URL", message: (error instanceof Error ? error.message : String(error)) });

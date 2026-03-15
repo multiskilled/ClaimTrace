@@ -8,9 +8,5 @@
 import type { ServiceStatus } from "./serviceStatus";
 
 export interface SettingsStatus {
-  s3: ServiceStatus;
   database: ServiceStatus;
-  bedrock: ServiceStatus;
-  modelId: string;
-  region: string;
 }

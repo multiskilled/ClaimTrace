@@ -18,6 +18,7 @@ import type {
 
 import type {
   AnalysisRun,
+  AnalyzeClaimInput,
   AuditEvent,
   Claim,
   ConfirmUploadInput,
@@ -722,11 +723,14 @@ export const getAnalyzeClaimUrl = (claimId: string) => {
 
 export const analyzeClaim = async (
   claimId: string,
+  analyzeClaimInput: AnalyzeClaimInput,
   options?: RequestInit,
 ): Promise<AnalysisRun> => {
   return customFetch<AnalysisRun>(getAnalyzeClaimUrl(claimId), {
     ...options,
     method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(analyzeClaimInput),
   });
 };
 
@@ -737,14 +741,14 @@ export const getAnalyzeClaimMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof analyzeClaim>>,
     TError,
-    { claimId: string },
+    { claimId: string; data: BodyType<AnalyzeClaimInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof analyzeClaim>>,
   TError,
-  { claimId: string },
+  { claimId: string; data: BodyType<AnalyzeClaimInput> },
   TContext
 > => {
   const mutationKey = ["analyzeClaim"];
@@ -758,11 +762,11 @@ export const getAnalyzeClaimMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof analyzeClaim>>,
-    { claimId: string }
+    { claimId: string; data: BodyType<AnalyzeClaimInput> }
   > = (props) => {
-    const { claimId } = props ?? {};
+    const { claimId, data } = props ?? {};
 
-    return analyzeClaim(claimId, requestOptions);
+    return analyzeClaim(claimId, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -771,7 +775,7 @@ export const getAnalyzeClaimMutationOptions = <
 export type AnalyzeClaimMutationResult = NonNullable<
   Awaited<ReturnType<typeof analyzeClaim>>
 >;
-
+export type AnalyzeClaimMutationBody = BodyType<AnalyzeClaimInput>;
 export type AnalyzeClaimMutationError = ErrorType<unknown>;
 
 /**
@@ -784,14 +788,14 @@ export const useAnalyzeClaim = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof analyzeClaim>>,
     TError,
-    { claimId: string },
+    { claimId: string; data: BodyType<AnalyzeClaimInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof analyzeClaim>>,
   TError,
-  { claimId: string },
+  { claimId: string; data: BodyType<AnalyzeClaimInput> },
   TContext
 > => {
   return useMutation(getAnalyzeClaimMutationOptions(options));

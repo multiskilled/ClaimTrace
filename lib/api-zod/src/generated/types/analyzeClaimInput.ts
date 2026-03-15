@@ -6,11 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AwsCredentials } from "./awsCredentials";
-import type { UploadUrlRequestFileType } from "./uploadUrlRequestFileType";
 
-export interface UploadUrlRequest {
-  fileName: string;
-  fileType: UploadUrlRequestFileType;
-  mimeType: string;
+export interface AnalyzeClaimInput {
   awsCredentials: AwsCredentials;
 }

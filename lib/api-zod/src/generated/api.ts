@@ -163,6 +163,8 @@ export const GetUploadUrlParams = zod.object({
   claimId: zod.coerce.string(),
 });
 
+export const getUploadUrlBodyAwsCredentialsRegionDefault = `us-east-1`;
+
 export const GetUploadUrlBody = zod.object({
   fileName: zod.string(),
   fileType: zod.enum([
@@ -175,6 +177,13 @@ export const GetUploadUrlBody = zod.object({
     "video",
   ]),
   mimeType: zod.string(),
+  awsCredentials: zod.object({
+    accessKeyId: zod.string(),
+    secretAccessKey: zod.string(),
+    region: zod.string().default(getUploadUrlBodyAwsCredentialsRegionDefault),
+    s3BucketName: zod.string(),
+    sessionToken: zod.string().optional(),
+  }),
 });
 
 export const GetUploadUrlResponse = zod.object({
@@ -209,6 +218,18 @@ export const ConfirmUploadBody = zod.object({
  */
 export const AnalyzeClaimParams = zod.object({
   claimId: zod.coerce.string(),
+});
+
+export const analyzeClaimBodyAwsCredentialsRegionDefault = `us-east-1`;
+
+export const AnalyzeClaimBody = zod.object({
+  awsCredentials: zod.object({
+    accessKeyId: zod.string(),
+    secretAccessKey: zod.string(),
+    region: zod.string().default(analyzeClaimBodyAwsCredentialsRegionDefault),
+    s3BucketName: zod.string(),
+    sessionToken: zod.string().optional(),
+  }),
 });
 
 export const AnalyzeClaimResponse = zod.object({
@@ -345,23 +366,11 @@ export const ListPortalRecordsResponse = zod.array(
  * @summary Get AWS connection status
  */
 export const GetSettingsStatusResponse = zod.object({
-  s3: zod.object({
-    configured: zod.boolean(),
-    connected: zod.boolean(),
-    error: zod.string().optional(),
-  }),
   database: zod.object({
     configured: zod.boolean(),
     connected: zod.boolean(),
     error: zod.string().optional(),
   }),
-  bedrock: zod.object({
-    configured: zod.boolean(),
-    connected: zod.boolean(),
-    error: zod.string().optional(),
-  }),
-  modelId: zod.string(),
-  region: zod.string(),
 });
 
 /**

@@ -1,25 +1,12 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 
-const region = process.env.AWS_REGION || "us-east-1";
-const modelId = process.env.BEDROCK_MODEL_ID || "amazon.nova-lite-v1:0";
+const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || "amazon.nova-lite-v1:0";
 
-let bedrockClient: BedrockRuntimeClient | null = null;
-
-function getBedrockClient(): BedrockRuntimeClient {
-  if (!bedrockClient) {
-    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-      throw new Error("AWS credentials not configured. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.");
-    }
-    bedrockClient = new BedrockRuntimeClient({
-      region,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-        ...(process.env.AWS_SESSION_TOKEN ? { sessionToken: process.env.AWS_SESSION_TOKEN } : {}),
-      },
-    });
-  }
-  return bedrockClient;
+interface AwsCredentials {
+  accessKeyId: string;
+  secretAccessKey: string;
+  region: string;
+  sessionToken?: string;
 }
 
 interface ExtractedFact {
@@ -46,8 +33,20 @@ interface AnalysisResult {
   rawOutput: string;
 }
 
-async function invokeNova(prompt: string): Promise<string> {
-  const client = getBedrockClient();
+function createBedrockClient(credentials: AwsCredentials): BedrockRuntimeClient {
+  return new BedrockRuntimeClient({
+    region: credentials.region,
+    credentials: {
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
+      ...(credentials.sessionToken ? { sessionToken: credentials.sessionToken } : {}),
+    },
+  });
+}
+
+async function invokeNova(prompt: string, credentials: AwsCredentials): Promise<string> {
+  const client = createBedrockClient(credentials);
+  const modelId = DEFAULT_MODEL_ID;
 
   const payload = {
     messages: [
@@ -102,7 +101,8 @@ export async function analyzeClaim(
   orderId: string,
   narrative: string,
   policyText: string | null,
-  evidenceDescriptions: string[]
+  evidenceDescriptions: string[],
+  credentials: AwsCredentials
 ): Promise<AnalysisResult> {
   const evidenceSection = evidenceDescriptions.length > 0
     ? evidenceDescriptions.map((e, i) => `Evidence ${i + 1}: ${e}`).join("\n")
@@ -155,7 +155,7 @@ Respond with ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const rawOutput = await invokeNova(prompt);
+    const rawOutput = await invokeNova(prompt, credentials);
     const parsed = extractJsonFromResponse(rawOutput);
 
     return {
@@ -196,26 +196,6 @@ function validateTimelineEvent(event: Record<string, unknown>): TimelineEvent {
   };
 }
 
-export function isBedrockConfigured(): boolean {
-  return !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
-}
-
-export async function checkBedrockConnection(): Promise<{ configured: boolean; connected: boolean; error?: string }> {
-  if (!isBedrockConfigured()) {
-    return { configured: false, connected: false, error: "AWS credentials not configured for Bedrock" };
-  }
-  try {
-    getBedrockClient();
-    return { configured: true, connected: true };
-  } catch (e) {
-    return { configured: true, connected: false, error: (e instanceof Error ? e.message : String(e)) };
-  }
-}
-
 export function getModelId(): string {
-  return modelId;
-}
-
-export function getRegion(): string {
-  return region;
+  return DEFAULT_MODEL_ID;
 }

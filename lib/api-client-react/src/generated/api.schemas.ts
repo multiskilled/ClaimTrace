@@ -137,6 +137,18 @@ export interface EvidenceItem {
   analysisStatus: EvidenceItemAnalysisStatus;
 }
 
+export interface AwsCredentials {
+  accessKeyId: string;
+  secretAccessKey: string;
+  region: string;
+  s3BucketName: string;
+  sessionToken?: string;
+}
+
+export interface AnalyzeClaimInput {
+  awsCredentials: AwsCredentials;
+}
+
 export type UploadUrlRequestFileType =
   (typeof UploadUrlRequestFileType)[keyof typeof UploadUrlRequestFileType];
 
@@ -154,6 +166,7 @@ export interface UploadUrlRequest {
   fileName: string;
   fileType: UploadUrlRequestFileType;
   mimeType: string;
+  awsCredentials: AwsCredentials;
 }
 
 export interface UploadUrlResponse {
@@ -288,11 +301,7 @@ export interface ServiceStatus {
 }
 
 export interface SettingsStatus {
-  s3: ServiceStatus;
   database: ServiceStatus;
-  bedrock: ServiceStatus;
-  modelId: string;
-  region: string;
 }
 
 export interface SeedResponse {
