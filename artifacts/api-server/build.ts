@@ -10,6 +10,9 @@ const __dirname = path.dirname(__filename);
 // which helps cold start times without risking some
 // packages that are not bundle compatible
 const allowlist = [
+  "@aws-sdk/client-bedrock-runtime",
+  "@aws-sdk/client-s3",
+  "@aws-sdk/s3-request-presigner",
   "@google/generative-ai",
   "axios",
   "connect-pg-simple",

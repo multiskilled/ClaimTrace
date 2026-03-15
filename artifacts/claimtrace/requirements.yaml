@@ -1,0 +1,23 @@
+packages:
+  "framer-motion": "For page transitions, tab animations, and micro-interactions"
+  "recharts": "For visualizing the AI confidence score via a gauge/radial chart"
+  "date-fns": "For formatting timestamps and audit trail dates"
+  "react-hook-form": "For robust form state management in the claim creation flow"
+  "@hookform/resolvers": "For validating react-hook-form with the Zod schemas"
+  "lucide-react": "For beautiful, consistent iconography across the application"
+  "react-dropzone": "For handling drag-and-drop evidence uploads"
+  "clsx": "For conditional tailwind class merging"
+  "tailwind-merge": "For resolving tailwind class conflicts"
+
+images:
+  - path: "artifacts/claimtrace/public/images/hero-bg.png"
+    description: "Premium enterprise SaaS background with deep indigo, slate, and subtle teal gradient mesh, featuring abstract geometric glassmorphism layers and soft light leaks to convey trust and advanced technology."
+    aspect_ratio: "16:9"
+  - path: "artifacts/claimtrace/public/images/logo.png"
+    description: "Minimalist modern tech logo mark for 'ClaimTrace', an elegant abstract shield or magnifying glass icon using vibrant indigo and teal, clean corporate aesthetic, transparent background."
+    aspect_ratio: "1:1"
+
+notes:
+  - Hooks are imported from @workspace/api-client-react as per the workspace monorepo setup.
+  - S3 file upload is mocked in the frontend for the presigned URL PUT step, but utilizes the actual backend endpoints for URL generation and confirmation.
+  - Zod schemas from the API client are used where applicable.

@@ -3,13 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ClaimTrace API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: claims
+    description: Claim operations
+  - name: evidence
+    description: Evidence operations
+  - name: analysis
+    description: Analysis operations
+  - name: portal
+    description: Portal demo operations
+  - name: settings
+    description: Settings and status operations
+  - name: seed
+    description: Demo seed operations
 paths:
   /healthz:
     get:
@@ -24,6 +36,289 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /claims:
+    get:
+      operationId: listClaims
+      tags: [claims]
+      summary: List all claims
+      responses:
+        "200":
+          description: List of claims
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Claim"
+    post:
+      operationId: createClaim
+      tags: [claims]
+      summary: Create a new claim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClaimInput"
+      responses:
+        "201":
+          description: Claim created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+
+  /claims/{claimId}:
+    get:
+      operationId: getClaimById
+      tags: [claims]
+      summary: Get claim by ID
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Claim details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+        "404":
+          description: Claim not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateClaim
+      tags: [claims]
+      summary: Update a claim
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClaimInput"
+      responses:
+        "200":
+          description: Claim updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+
+  /claims/{claimId}/evidence:
+    get:
+      operationId: listEvidence
+      tags: [evidence]
+      summary: List evidence for a claim
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of evidence items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EvidenceItem"
+
+  /claims/{claimId}/evidence/upload-url:
+    post:
+      operationId: getUploadUrl
+      tags: [evidence]
+      summary: Get presigned upload URL for evidence
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+
+  /claims/{claimId}/evidence/confirm:
+    post:
+      operationId: confirmUpload
+      tags: [evidence]
+      summary: Confirm evidence upload and save metadata
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmUploadInput"
+      responses:
+        "201":
+          description: Evidence metadata saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceItem"
+
+  /claims/{claimId}/analyze:
+    post:
+      operationId: analyzeClaim
+      tags: [analysis]
+      summary: Run AI analysis on a claim
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisRun"
+
+  /claims/{claimId}/analysis:
+    get:
+      operationId: getAnalysis
+      tags: [analysis]
+      summary: Get latest analysis for a claim
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Latest analysis run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisRun"
+        "404":
+          description: No analysis found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /claims/{claimId}/audit:
+    get:
+      operationId: getAuditTrail
+      tags: [claims]
+      summary: Get audit trail for a claim
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEvent"
+
+  /claims/{claimId}/portal-sync:
+    post:
+      operationId: syncToPortal
+      tags: [portal]
+      summary: Push decision to internal portal
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortalSyncInput"
+      responses:
+        "200":
+          description: Portal record created/updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalRecord"
+
+  /portal/records:
+    get:
+      operationId: listPortalRecords
+      tags: [portal]
+      summary: List all portal records
+      responses:
+        "200":
+          description: List of portal records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortalRecord"
+
+  /settings/status:
+    get:
+      operationId: getSettingsStatus
+      tags: [settings]
+      summary: Get AWS connection status
+      responses:
+        "200":
+          description: AWS service status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsStatus"
+
+  /seed:
+    post:
+      operationId: seedDemoData
+      tags: [seed]
+      summary: Seed demo claims
+      responses:
+        "200":
+          description: Demo data seeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeedResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +329,367 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
+
+    Claim:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        claimType:
+          type: string
+          enum: [return, warranty, dispute, damage, other]
+        merchantName:
+          type: string
+        customerName:
+          type: string
+        orderId:
+          type: string
+        narrative:
+          type: string
+        policyText:
+          type: string
+        status:
+          type: string
+          enum: [draft, evidence_uploaded, analyzing, analyzed, synced]
+        recommendation:
+          type: string
+          enum: [approve, reject, human_review]
+        reviewerSummary:
+          type: string
+        confidenceScore:
+          type: number
+        timelineSummary:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - claimType
+        - merchantName
+        - customerName
+        - orderId
+        - narrative
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateClaimInput:
+      type: object
+      properties:
+        title:
+          type: string
+        claimType:
+          type: string
+          enum: [return, warranty, dispute, damage, other]
+        merchantName:
+          type: string
+        customerName:
+          type: string
+        orderId:
+          type: string
+        narrative:
+          type: string
+        policyText:
+          type: string
+      required:
+        - title
+        - claimType
+        - merchantName
+        - customerName
+        - orderId
+        - narrative
+
+    UpdateClaimInput:
+      type: object
+      properties:
+        title:
+          type: string
+        narrative:
+          type: string
+        policyText:
+          type: string
+        status:
+          type: string
+          enum: [draft, evidence_uploaded, analyzing, analyzed, synced]
+
+    EvidenceItem:
+      type: object
+      properties:
+        id:
+          type: string
+        claimId:
+          type: string
+        fileName:
+          type: string
+        fileType:
+          type: string
+          enum: [receipt, photo, screenshot, document, text_note, audio, video]
+        mimeType:
+          type: string
+        s3Key:
+          type: string
+        uploadedAt:
+          type: string
+        extractedText:
+          type: string
+        extractedFacts:
+          type: array
+          items:
+            type: string
+        analysisStatus:
+          type: string
+          enum: [pending, processing, completed, failed]
+      required:
+        - id
+        - claimId
+        - fileName
+        - fileType
+        - mimeType
+        - s3Key
+        - uploadedAt
+        - analysisStatus
+
+    UploadUrlRequest:
+      type: object
+      properties:
+        fileName:
+          type: string
+        fileType:
+          type: string
+          enum: [receipt, photo, screenshot, document, text_note, audio, video]
+        mimeType:
+          type: string
+      required:
+        - fileName
+        - fileType
+        - mimeType
+
+    UploadUrlResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+        s3Key:
+          type: string
+      required:
+        - uploadUrl
+        - s3Key
+
+    ConfirmUploadInput:
+      type: object
+      properties:
+        s3Key:
+          type: string
+        fileName:
+          type: string
+        fileType:
+          type: string
+          enum: [receipt, photo, screenshot, document, text_note, audio, video]
+        mimeType:
+          type: string
+      required:
+        - s3Key
+        - fileName
+        - fileType
+        - mimeType
+
+    AnalysisRun:
+      type: object
+      properties:
+        id:
+          type: string
+        claimId:
+          type: string
+        startedAt:
+          type: string
+        completedAt:
+          type: string
+        modelName:
+          type: string
+        summary:
+          type: string
+        recommendation:
+          type: string
+          enum: [approve, reject, human_review]
+        contradictions:
+          type: array
+          items:
+            type: string
+        missingEvidence:
+          type: array
+          items:
+            type: string
+        extractedFacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExtractedFact"
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimelineEvent"
+        confidenceScore:
+          type: number
+        rawOutput:
+          type: string
+      required:
+        - id
+        - claimId
+        - startedAt
+        - modelName
+        - recommendation
+        - confidenceScore
+
+    ExtractedFact:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+        source:
+          type: string
+        confidence:
+          type: string
+          enum: [high, medium, low]
+      required:
+        - label
+        - value
+        - source
+        - confidence
+
+    TimelineEvent:
+      type: object
+      properties:
+        date:
+          type: string
+        event:
+          type: string
+        source:
+          type: string
+      required:
+        - date
+        - event
+        - source
+
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        claimId:
+          type: string
+        eventType:
+          type: string
+        actor:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+      required:
+        - id
+        - claimId
+        - eventType
+        - actor
+        - message
+        - timestamp
+
+    PortalSyncInput:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum: [approve, reject, human_review]
+        notes:
+          type: string
+      required:
+        - decision
+
+    PortalRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        claimId:
+          type: string
+        portalStatus:
+          type: string
+          enum: [pending, synced, rejected, approved]
+        portalNotes:
+          type: string
+        decision:
+          type: string
+          enum: [approve, reject, human_review]
+        syncedAt:
+          type: string
+        claimTitle:
+          type: string
+        merchantName:
+          type: string
+      required:
+        - id
+        - claimId
+        - portalStatus
+        - decision
+        - syncedAt
+
+    SettingsStatus:
+      type: object
+      properties:
+        s3:
+          $ref: "#/components/schemas/ServiceStatus"
+        database:
+          $ref: "#/components/schemas/ServiceStatus"
+        bedrock:
+          $ref: "#/components/schemas/ServiceStatus"
+        modelId:
+          type: string
+        region:
+          type: string
+      required:
+        - s3
+        - database
+        - bedrock
+        - modelId
+        - region
+
+    ServiceStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        connected:
+          type: boolean
+        error:
+          type: string
+      required:
+        - configured
+        - connected
+
+    SeedResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        claimIds:
+          type: array
+          items:
+            type: string
+      required:
+        - message
+        - claimIds
