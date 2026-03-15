@@ -15,9 +15,6 @@ export default function Landing() {
         </div>
         <div className="flex items-center gap-4">
           <Link href="/dashboard">
-            <Button variant="ghost" className="hidden sm:inline-flex font-semibold">Sign In</Button>
-          </Link>
-          <Link href="/dashboard">
             <Button className="rounded-full px-6 font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5">
               Go to Dashboard
             </Button>
