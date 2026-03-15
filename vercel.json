@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm -w run typecheck:libs && pnpm --filter @workspace/claimtrace run build && mkdir -p .vercel/output/static && cp -r artifacts/claimtrace/dist/. .vercel/output/static/ && printf '{\"version\":3,\"routes\":[{\"src\":\"/assets/(.*)\",\"headers\":{\"cache-control\":\"public, max-age=31536000, immutable\"},\"continue\":true},{\"handle\":\"filesystem\"},{\"src\":\"/api/(.*)\",\"dest\":\"/api/index\"},{\"src\":\"/(.*)\",\"dest\":\"/index.html\"}]}' > .vercel/output/config.json",
+  "buildCommand": "pnpm -w run vercel-build",
   "env": {
     "BASE_PATH": "/"
   }
