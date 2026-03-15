@@ -1,0 +1,508 @@
+You are a senior full-stack engineer, AWS Bedrock/Nova engineer, product architect, and hackathon delivery specialist.
+
+Build a production-shaped MVP called **ClaimTrace**.
+
+## Product summary
+ClaimTrace is a multimodal evidence-intelligence platform for ecommerce returns, warranty claims, and dispute review. A reviewer uploads mixed evidence such as receipts, product photos, screenshots, PDFs, and short text evidence. The system analyzes the evidence using **Amazon Nova** on AWS, reconstructs a claim timeline, identifies contradictions or missing proof, generates a reviewer summary, and recommends one of:
+- Approve
+- Reject
+- Human Review
+
+It must also include a **demo portal automation flow** so the reviewer can push the result into an internal merchant portal. Build the portal as part of the app for now. Keep the architecture ready for later integration with Nova Act or external systems.
+
+## Critical constraints
+This app will be built on Replit now, but later exported to **Vercel**.
+That means:
+- Use **Next.js** with **App Router**
+- Use **TypeScript**
+- Use **Tailwind CSS**
+- Use **shadcn/ui**
+- Use clean modular architecture
+- Do NOT use Replit-only libraries or Replit-specific persistence
+- Do NOT store uploads on local disk except temporary in-memory handling when absolutely required
+- Use **direct-to-S3 uploads with presigned URLs**
+- Use **AWS SDK v3**
+- Use environment variables for all secrets and config
+- Use Node runtime for API routes that need AWS SDK
+- Keep the code Vercel-compatible
+- Avoid any architecture that depends on long-running local background workers
+- Avoid websockets unless absolutely necessary
+- Do not use SQLite or local file-based DB
+- Do not use Prisma with local SQLite
+- Prefer AWS-native persistence
+
+## Primary tech stack
+Frontend:
+- Next.js latest stable
+- TypeScript
+- Tailwind
+- shadcn/ui
+- lucide-react
+- react-hook-form
+- zod
+- recharts for charts if needed
+
+Backend / infra:
+- Next.js route handlers for API
+- AWS S3 for evidence storage
+- AWS DynamoDB for claims, evidence metadata, runs, and audit trail
+- Amazon Bedrock with Amazon Nova for analysis
+- Bedrock runtime access through AWS SDK v3
+- optional abstraction layer for Nova Act integration later
+- optional abstraction layer for multimodal embeddings later
+
+## Core AWS model usage
+Use Amazon Nova as the core intelligence layer.
+Design the app so it can support:
+- Nova 2 Lite for evidence extraction and synthesis
+- later extension for Nova Multimodal Embeddings
+- later extension for Nova Act
+
+If direct multimodal analysis becomes too complex in first pass, still keep the interfaces clean and implement the MVP around:
+- PDFs
+- images
+- screenshots
+- plain text notes
+
+Support architecture for:
+- audio evidence
+- video evidence
+but these can be marked as phase-2 adapters if needed.
+
+## Global product positioning
+This app is for a global audience.
+Use clear, professional English in the UI.
+Do not design it for one country or region.
+Keep currency, dates, and policy language generic and configurable.
+
+## Goal
+Build a hackathon-ready but production-shaped MVP that:
+1. can be deployed
+2. looks polished
+3. works end-to-end
+4. demonstrates real Amazon Nova usage
+5. can later be exported to Vercel with minimal refactor
+
+## Required user flows
+
+### Flow 1: Create claim
+A reviewer can create a new claim with:
+- claim title
+- claim type
+- merchant name
+- customer name
+- order ID
+- claim narrative
+- optional policy text
+
+### Flow 2: Upload evidence
+The reviewer can upload evidence items:
+- receipt/invoice PDF
+- product photos
+- screenshots
+- text files / notes
+- optional audio/video placeholders for future support
+
+Each upload must go to S3 using presigned URLs.
+
+### Flow 3: Analyze claim
+The system must:
+- read evidence metadata
+- run evidence extraction per item
+- build a structured fact set
+- generate a timeline
+- identify contradictions, missing data, and risk signals
+- produce a recommendation:
+  - Approve
+  - Reject
+  - Human Review
+- generate a concise reviewer summary
+
+### Flow 4: Review dashboard
+The claim detail page must show:
+- claim header
+- status
+- evidence gallery/list
+- extracted facts
+- timeline
+- contradictions / red flags
+- recommendation card
+- reviewer summary
+- audit history
+
+### Flow 5: Push decision to internal portal
+Build an internal “Merchant Portal Demo” inside the same app.
+When the reviewer clicks “Send to Portal”, the decision and summary must populate the portal record.
+Architect this as a portal adapter so that later I can replace the internal portal with Nova Act or a real web workflow.
+
+## UX requirements
+Design must feel modern, clean, serious, and startup-grade.
+Use a premium SaaS look.
+Must include:
+- polished landing page
+- dashboard page
+- create-claim page
+- claim detail page
+- portal demo page
+- settings / env status page
+- responsive layout
+- light/dark mode if easy
+
+The app should feel suitable for judges and enterprise stakeholders.
+Avoid clutter.
+Use cards, tabs, side panels, badges, status chips, and clean empty states.
+Use good typography and spacing.
+
+## Information architecture
+Recommended routes:
+- /
+- /dashboard
+- /claims/new
+- /claims/[id]
+- /portal-demo
+- /settings
+- /api/...
+
+## Data model
+Use DynamoDB with a simple, clean schema.
+Entities should include at minimum:
+
+### Claim
+- id
+- title
+- claimType
+- merchantName
+- customerName
+- orderId
+- narrative
+- policyText
+- status
+- createdAt
+- updatedAt
+- recommendation
+- reviewerSummary
+- confidenceScore
+- timelineSummary
+
+### EvidenceItem
+- id
+- claimId
+- fileName
+- fileType
+- mimeType
+- s3Key
+- s3Url or signed-access strategy
+- uploadedAt
+- extractedText
+- extractedFacts
+- analysisStatus
+
+### AnalysisRun
+- id
+- claimId
+- startedAt
+- completedAt
+- modelName
+- summary
+- recommendation
+- contradictions
+- missingEvidence
+- confidenceScore
+- rawOutput
+
+### AuditEvent
+- id
+- claimId
+- eventType
+- actor
+- message
+- timestamp
+
+### PortalRecord
+- id
+- claimId
+- portalStatus
+- portalNotes
+- decision
+- syncedAt
+
+You may use either:
+- single-table DynamoDB design with clear PK/SK patterns
+or
+- a simple multi-table DynamoDB design
+Choose whichever makes implementation faster and cleaner.
+
+## Architecture requirements
+Create clean layers:
+- app/ for routes
+- components/
+- lib/
+- lib/aws/
+- lib/bedrock/
+- lib/prompts/
+- lib/services/
+- lib/types/
+- lib/validators/
+- app/api/
+- scripts/ for seed/demo helpers if needed
+
+### Important abstraction layers
+Implement these service interfaces cleanly:
+
+1. StorageService
+- createPresignedUploadUrl()
+- saveEvidenceMetadata()
+- listClaimEvidence()
+
+2. AnalysisService
+- analyzeEvidenceItem()
+- analyzeClaim()
+- generateTimeline()
+- generateRecommendation()
+
+3. PortalSyncService
+- syncDecisionToPortal()
+
+4. ClaimRepository
+- createClaim()
+- updateClaim()
+- getClaimById()
+- listClaims()
+- addAuditEvent()
+
+This separation is important for future export and scaling.
+
+## Amazon Nova integration requirements
+Implement real Bedrock integration if environment variables are present.
+If credentials are missing, provide a clearly labeled **Demo Mode** with mocked deterministic outputs so the app remains usable.
+
+Do not fake AWS usage silently.
+If in demo mode, show a clear banner:
+“Demo Mode: AWS credentials not configured. Analysis is simulated.”
+
+### Bedrock behavior
+Create prompt templates for:
+1. Evidence extraction prompt
+2. Claim synthesis prompt
+3. Timeline generation prompt
+4. Recommendation prompt
+
+The system should aim to extract fields such as:
+- order ID
+- purchase date
+- product name
+- merchant
+- visible damage notes
+- conversation claims
+- refund/warranty reason
+- key timestamps
+- policy violations or support
+
+### Recommendation logic
+Final recommendation should be based on:
+- consistency across evidence
+- completeness of proof
+- policy support
+- missing or contradictory data
+- confidence score
+
+Return structured JSON from model calls wherever possible.
+Use zod validation for model outputs.
+Gracefully handle invalid JSON responses.
+
+## MVP scope rules
+This is important:
+Build a strong MVP, not an overengineered enterprise product.
+
+### Must-have in MVP
+- polished UI
+- S3 uploads via presigned URLs
+- claim CRUD
+- evidence metadata persistence
+- claim analysis flow
+- extracted facts
+- timeline
+- contradictions
+- recommendation card
+- portal demo sync
+- demo seed data
+- clear environment setup instructions
+
+### Nice-to-have if easy
+- charts
+- drag-and-drop uploads
+- side-by-side evidence comparison
+- confidence gauge
+- tags or severity levels
+- settings page showing connection status
+
+### Do NOT spend time on
+- multi-user auth unless quick and easy
+- full RBAC
+- real billing
+- heavy background job infrastructure
+- complicated vector search in v1
+- full live voice mode in v1
+- full video understanding in v1 unless trivial
+- external merchant integrations in v1
+
+## Demo-first strategy
+The app must include seeded demo scenarios so judges can see results quickly.
+Create 3 seeded example claims:
+1. genuine damage case
+2. contradictory evidence case
+3. incomplete evidence / human review case
+
+These demo claims can either use sample S3-hosted assets or local demo metadata that points to placeholder evidence cards if real assets are unavailable.
+
+## Landing page requirements
+Create a strong landing page with:
+- hero
+- short value proposition
+- feature highlights
+- “How it works”
+- architecture or trust section
+- CTA to open dashboard
+
+Tone should be enterprise-grade and hackathon polished.
+
+## Claim detail page requirements
+This page is the heart of the product.
+It must include:
+- claim summary header
+- tabs or sections:
+  - Overview
+  - Evidence
+  - Timeline
+  - Analysis
+  - Audit Trail
+- recommendation panel on the right or top
+- contradiction cards
+- missing evidence card
+- reviewer summary box
+- push-to-portal button
+
+## Portal demo requirements
+Build a simple internal portal page that shows submitted decisions.
+It should look like a back-office system.
+When syncing a claim:
+- create or update a portal record
+- display claim ID
+- decision
+- notes
+- synced timestamp
+- status badge
+
+## Engineering quality requirements
+- Strict TypeScript as much as practical
+- Reusable components
+- zod validation on forms and API input
+- sensible error states
+- loading states
+- empty states
+- clean logging
+- no dead code
+- clear README
+- .env.example
+- comments only where useful
+- no giant monolithic files
+- modular prompt templates
+- do not hardcode secrets
+- no fake magic hidden in UI
+
+## Deployment requirements
+Prepare the app so it can be deployed on Replit now and exported to Vercel later.
+
+### For Vercel compatibility
+- avoid writing to disk
+- keep API routes stateless
+- use S3 for files
+- use environment variables only
+- no reliance on Replit DB
+- no cron dependency in v1
+
+## Environment variables
+Create an .env.example with likely variables such as:
+- AWS_REGION
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_SESSION_TOKEN (optional)
+- S3_BUCKET_NAME
+- DYNAMODB_TABLE_NAME or table names
+- BEDROCK_MODEL_ID
+- APP_URL
+- DEMO_MODE
+
+If additional variables are needed, include them.
+
+## README requirements
+Write a professional README containing:
+- project overview
+- architecture
+- feature list
+- setup instructions
+- AWS prerequisites
+- local/Replit run instructions
+- deployment notes
+- Vercel export notes
+- demo mode explanation
+- known limitations
+- future roadmap
+
+## Deliverables
+I want the agent to produce:
+1. full working codebase
+2. polished UI
+3. reusable services and types
+4. AWS integration layer
+5. demo seed scenarios
+6. README
+7. .env.example
+
+## Build sequence
+Work in the following order:
+
+Phase 1:
+- scaffold project
+- setup UI shell
+- create routes
+- create types, validators, and service interfaces
+
+Phase 2:
+- implement claim CRUD
+- implement dashboard
+- implement create-claim flow
+
+Phase 3:
+- implement S3 presigned upload flow
+- evidence metadata storage
+
+Phase 4:
+- implement Bedrock/Nova analysis service
+- implement structured prompts
+- implement claim synthesis and recommendation
+
+Phase 5:
+- implement claim detail page with timeline, contradictions, and summary
+
+Phase 6:
+- implement portal demo sync flow
+
+Phase 7:
+- add demo mode and seed scenarios
+
+Phase 8:
+- refine UI, README, env docs, and error handling
+
+## Working style
+Do not ask broad philosophical questions.
+Make strong sensible defaults.
+If something is optional, choose the fastest production-shaped option.
+If a feature is too large for MVP, stub it cleanly and move on.
+Do not overcomplicate.
+Do not generate fake integrations and pretend they are real.
+Be honest in code and UI about what is real, mocked, or phase-2.
+
+## Final expectation
+Build ClaimTrace as a serious, polished, hackathon-ready Amazon Nova application that is fast to demo, cleanly architected, and easy to export to Vercel later.
+Start implementation now.
