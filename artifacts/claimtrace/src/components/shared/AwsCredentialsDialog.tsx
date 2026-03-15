@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Accordion,
   AccordionContent,
@@ -61,6 +62,7 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, initialCre
   const [sessionToken, setSessionToken] = useState("")
   const [showSecret, setShowSecret] = useState(false)
   const [showToken, setShowToken] = useState(false)
+  const [saveForBrowser, setSaveForBrowser] = useState(true)
 
   useEffect(() => {
     if (open) {
@@ -71,6 +73,7 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, initialCre
         setRegion(creds.region || "us-east-1")
         setS3BucketName(creds.s3BucketName)
         setSessionToken(creds.sessionToken || "")
+        setSaveForBrowser(true)
       }
     }
   }, [open, initialCreds])
@@ -85,7 +88,9 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, initialCre
       s3BucketName: s3BucketName.trim(),
       ...(sessionToken.trim() ? { sessionToken: sessionToken.trim() } : {}),
     }
-    saveCredentials(creds)
+    if (saveForBrowser) {
+      saveCredentials(creds)
+    }
     onConfirm(creds)
     onOpenChange(false)
   }
@@ -165,6 +170,17 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, initialCre
                 className="font-mono text-sm"
               />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="saveForBrowser"
+              checked={saveForBrowser}
+              onCheckedChange={(checked) => setSaveForBrowser(checked === true)}
+            />
+            <Label htmlFor="saveForBrowser" className="text-sm text-muted-foreground cursor-pointer">
+              Save for this browser
+            </Label>
           </div>
 
           <Accordion type="single" collapsible className="border rounded-xl px-1">

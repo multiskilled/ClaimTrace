@@ -18,6 +18,8 @@ import { ClaimStatusBadge, RecommendationBadge } from "@/components/shared/Statu
 import { format } from "date-fns"
 import { Loader2, BrainCircuit, UploadCloud, AlertTriangle, FileCheck2, ArrowRightLeft, Clock, Search, Settings2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { ToastAction } from "@/components/ui/toast"
+import { useLocation } from "wouter"
 import { useDropzone } from "react-dropzone"
 import { cn } from "@/lib/utils"
 import { AwsCredentialsDialog, loadSavedCredentials, type AwsCredentials } from "@/components/shared/AwsCredentialsDialog"
@@ -27,6 +29,7 @@ export default function ClaimDetail() {
   const claimId = params?.id || ""
   const { toast } = useToast()
 
+  const [, navigate] = useLocation()
   const { data: claim, isLoading: loadingClaim, refetch: refetchClaim } = useGetClaimById(claimId)
   const { data: evidence, isLoading: loadingEvidence, refetch: refetchEvidence } = useListEvidence(claimId)
   const { data: analysis, refetch: refetchAnalysis } = useGetAnalysis(claimId)
@@ -85,8 +88,13 @@ export default function ClaimDetail() {
     if (!creds) {
       toast({
         title: "AWS credentials required",
-        description: "Go to Settings and configure your AWS credentials to upload evidence files.",
+        description: "Configure your AWS credentials to upload evidence files.",
         variant: "destructive",
+        action: (
+          <ToastAction altText="Go to Settings" onClick={() => navigate("/settings")}>
+            Settings
+          </ToastAction>
+        ),
       })
       return
     }
