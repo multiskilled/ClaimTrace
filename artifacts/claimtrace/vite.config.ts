@@ -38,12 +38,19 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, "../../dist"),
+    outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       onwarn(warning, warn) {
         if (warning.code === "SOURCEMAP_ERROR") return;
         warn(warning);
+      },
+      output: {
+        manualChunks: {
+          "vendor-ui": ["@radix-ui/react-dialog", "@radix-ui/react-select", "@radix-ui/react-tabs", "@radix-ui/react-toast"],
+          "vendor-query": ["@tanstack/react-query"],
+        },
       },
     },
   },

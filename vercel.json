@@ -1,6 +1,6 @@
 {
   "buildCommand": "pnpm -w run typecheck:libs && pnpm --filter @workspace/claimtrace run build",
-  "outputDirectory": "dist",
+  "outputDirectory": "artifacts/claimtrace/dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
