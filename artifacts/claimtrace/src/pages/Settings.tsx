@@ -222,6 +222,10 @@ export default function Settings() {
         open={credDialogOpen}
         onOpenChange={setCredDialogOpen}
         onConfirm={handleCredConfirm}
+        onClear={() => {
+          setSavedCreds(null)
+          toast({ title: "Credentials erased", description: "AWS credentials have been removed from this browser." })
+        }}
         initialCreds={savedCreds}
       />
     </div>
