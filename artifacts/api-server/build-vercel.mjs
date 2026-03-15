@@ -1,7 +1,7 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import { build } from "esbuild";
-import { readFile } from "fs/promises";
+import { readFile, mkdir, writeFile } from "fs/promises";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,7 +32,14 @@ const external = allDeps.filter(
     ].includes(dep)
 );
 
-const outfile = path.resolve(__dirname, "../../api/index.js");
+// Build Output API: functions go in .vercel/output/functions/<name>.func/
+const funcDir = path.resolve(
+  __dirname,
+  "../../.vercel/output/functions/api/index.func"
+);
+await mkdir(funcDir, { recursive: true });
+
+const outfile = path.join(funcDir, "index.js");
 
 await build({
   entryPoints: [path.resolve(__dirname, "src/vercel.ts")],
@@ -45,6 +52,27 @@ await build({
   logLevel: "info",
   tsconfig: path.resolve(__dirname, "tsconfig.json"),
   conditions: ["workspace"],
+  // Ensure module.exports = handler for Vercel Node.js launcher
+  footer: {
+    js: "if (typeof exports.default !== 'undefined') { module.exports = exports.default; }",
+  },
 });
 
-console.log(`API bundled → api/index.js`);
+// Write the Vercel function config
+await writeFile(
+  path.join(funcDir, ".vc-config.json"),
+  JSON.stringify(
+    {
+      runtime: "nodejs20.x",
+      handler: "index.js",
+      launcherType: "Nodejs",
+      shouldAddHelpers: false,
+    },
+    null,
+    2
+  )
+);
+
+console.log(
+  `API bundled → .vercel/output/functions/api/index.func/index.js`
+);

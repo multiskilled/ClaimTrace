@@ -41485,7 +41485,7 @@ var require_lib6 = __commonJS({
   "../../node_modules/.pnpm/busboy@1.6.0/node_modules/busboy/lib/index.js"(exports2, module2) {
     "use strict";
     var { parseContentType } = require_utils6();
-    function getInstance(cfg) {
+    function getInstance2(cfg) {
       const headers = cfg.headers;
       const conType = parseContentType(headers["content-type"]);
       if (!conType)
@@ -41527,7 +41527,7 @@ var require_lib6 = __commonJS({
       if (typeof cfg.headers !== "object" || cfg.headers === null || typeof cfg.headers["content-type"] !== "string") {
         throw new Error("Missing Content-Type");
       }
-      return getInstance(cfg);
+      return getInstance2(cfg);
     };
   }
 });
@@ -106168,13 +106168,32 @@ var insertPortalRecordSchema = createInsertSchema(portalRecordsTable).omit({ id:
 
 // ../../lib/db/src/index.ts
 var { Pool: Pool3 } = esm_default;
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?"
-  );
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error(
+      "DATABASE_URL must be set. Did you forget to provision a database?"
+    );
+  }
+  const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL });
+  return { pool: pool2, db: drizzle(pool2, { schema: schema_exports }) };
 }
-var pool = new Pool3({ connectionString: process.env.DATABASE_URL });
-var db = drizzle(pool, { schema: schema_exports });
+var _instance = null;
+function getInstance() {
+  if (!_instance) {
+    _instance = getDb();
+  }
+  return _instance;
+}
+var pool = new Proxy({}, {
+  get(_target, prop) {
+    return getInstance().pool[prop];
+  }
+});
+var db = new Proxy({}, {
+  get(_target, prop) {
+    return getInstance().db[prop];
+  }
+});
 
 // src/routes/claims.ts
 var router2 = (0, import_express2.Router)();
