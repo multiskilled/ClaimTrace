@@ -1,10 +1,5 @@
 {
-  "buildCommand": "pnpm -w run typecheck:libs && pnpm --filter @workspace/claimtrace run build",
-  "outputDirectory": "artifacts/claimtrace/dist",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ],
+  "buildCommand": "sh scripts/vercel-build.sh",
   "env": {
     "BASE_PATH": "/"
   }
