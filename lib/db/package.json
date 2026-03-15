@@ -8,12 +8,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "workspace": "./src/index.ts",
-      "default": "./src/index.ts"
+      "node": "./src/index.ts"
     },
     "./schema": {
       "types": "./dist/schema/index.d.ts",
       "workspace": "./src/schema/index.ts",
-      "default": "./src/schema/index.ts"
+      "node": "./src/schema/index.ts"
     }
   },
   "scripts": {
