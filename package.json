@@ -7,7 +7,7 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
-    "vercel-build": "pnpm run typecheck:libs && pnpm --filter @workspace/claimtrace run build && mkdir -p .vercel/output/static && cp -r artifacts/claimtrace/dist/. .vercel/output/static/ && node -e \"require('fs').writeFileSync('.vercel/output/config.json', JSON.stringify({version:3,routes:[{src:'/assets/(.*)',headers:{'cache-control':'public, max-age=31536000, immutable'},continue:true},{handle:'filesystem'},{src:'/api/(.*)',dest:'/api/index'},{src:'/(.*)',dest:'/index.html'}]}))\""
+    "vercel-build": "pnpm run typecheck:libs && pnpm --filter @workspace/claimtrace run build && pnpm --filter @workspace/api-server run build:vercel && mkdir -p .vercel/output/static && cp -r artifacts/claimtrace/dist/. .vercel/output/static/ && node -e \"require('fs').writeFileSync('.vercel/output/config.json', JSON.stringify({version:3,routes:[{src:'/assets/(.*)',headers:{'cache-control':'public, max-age=31536000, immutable'},continue:true},{handle:'filesystem'},{src:'/api/(.*)',dest:'/api/index'},{src:'/(.*)',dest:'/index.html'}]}))\""
   },
   "private": true,
   "devDependencies": {
