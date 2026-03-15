@@ -44,6 +44,7 @@ await build({
   external,
   logLevel: "info",
   tsconfig: path.resolve(__dirname, "tsconfig.json"),
+  conditions: ["workspace"],
 });
 
 console.log(`API bundled → api/index.js`);
