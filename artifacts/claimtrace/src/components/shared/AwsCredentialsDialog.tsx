@@ -12,6 +12,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -102,7 +109,7 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, onClear, i
     clearCredentials()
     setAccessKeyId("")
     setSecretAccessKey("")
-    setRegion("us-east-1")
+    setRegion("")
     setS3BucketName("")
     setSessionToken("")
     onClear?.()
@@ -115,6 +122,9 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, onClear, i
           <DialogTitle className="text-xl font-display">AWS Credentials</DialogTitle>
           <DialogDescription>
             Enter your AWS credentials to run AI analysis with Amazon Bedrock Nova Lite and store evidence in S3. Credentials are saved in your browser only.
+            <span className="block mt-1 text-amber-600 dark:text-amber-400 text-xs font-medium">
+              Note: AWS region must be a specific region (e.g. us-east-1) — not "Global". IAM shows "Global" for IAM itself, but Bedrock requires a regional endpoint.
+            </span>
           </DialogDescription>
         </DialogHeader>
 
@@ -156,13 +166,21 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, onClear, i
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="region">AWS Region <span className="text-destructive">*</span></Label>
-              <Input
-                id="region"
-                value={region}
-                onChange={e => setRegion(e.target.value)}
-                placeholder="us-east-1"
-                className="font-mono text-sm"
-              />
+              <Select value={region} onValueChange={setRegion}>
+                <SelectTrigger id="region" className="font-mono text-sm">
+                  <SelectValue placeholder="Select region" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="us-east-1">us-east-1 (N. Virginia)</SelectItem>
+                  <SelectItem value="us-east-2">us-east-2 (Ohio)</SelectItem>
+                  <SelectItem value="us-west-2">us-west-2 (Oregon)</SelectItem>
+                  <SelectItem value="eu-west-1">eu-west-1 (Ireland)</SelectItem>
+                  <SelectItem value="eu-central-1">eu-central-1 (Frankfurt)</SelectItem>
+                  <SelectItem value="ap-southeast-1">ap-southeast-1 (Singapore)</SelectItem>
+                  <SelectItem value="ap-northeast-1">ap-northeast-1 (Tokyo)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Nova Lite requires a US region for cross-region inference</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="s3BucketName">S3 Bucket Name <span className="text-destructive">*</span></Label>

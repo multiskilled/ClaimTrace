@@ -33,7 +33,23 @@ interface AnalysisResult {
   rawOutput: string;
 }
 
+function validateRegion(region: string): void {
+  if (!region || region.toLowerCase() === "global") {
+    throw new Error(
+      `"${region}" is not a valid AWS region. Bedrock is a regional service — please select a specific region like "us-east-1" or "us-west-2". ` +
+      `The "Global" shown in the IAM console refers to IAM itself (which has no region), not to Bedrock.`
+    );
+  }
+  const regionPattern = /^[a-z]{2}-[a-z]+-\d+$/;
+  if (!regionPattern.test(region)) {
+    throw new Error(
+      `"${region}" is not a valid AWS region format. Use a region code like "us-east-1", "us-west-2", or "eu-central-1".`
+    );
+  }
+}
+
 function createBedrockClient(credentials: AwsCredentials): BedrockRuntimeClient {
+  validateRegion(credentials.region);
   return new BedrockRuntimeClient({
     region: credentials.region,
     credentials: {
