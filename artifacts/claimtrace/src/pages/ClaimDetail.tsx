@@ -163,6 +163,7 @@ export default function ClaimDetail() {
         open={credDialogOpen}
         onOpenChange={handleCredDialogChange}
         onConfirm={handleCredDialogConfirm}
+        onClear={() => setAwsCreds(null)}
       />
 
       {/* Header Panel */}

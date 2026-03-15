@@ -51,10 +51,11 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: (creds: AwsCredentials) => void
+  onClear?: () => void
   initialCreds?: AwsCredentials | null
 }
 
-export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, initialCreds }: Props) {
+export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, onClear, initialCreds }: Props) {
   const [accessKeyId, setAccessKeyId] = useState("")
   const [secretAccessKey, setSecretAccessKey] = useState("")
   const [region, setRegion] = useState("us-east-1")
@@ -104,6 +105,7 @@ export function AwsCredentialsDialog({ open, onOpenChange, onConfirm, initialCre
     setRegion("us-east-1")
     setS3BucketName("")
     setSessionToken("")
+    onClear?.()
   }
 
   return (

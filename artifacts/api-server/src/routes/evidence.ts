@@ -29,7 +29,8 @@ router.post("/claims/:claimId/evidence/upload-url", async (req, res) => {
     const { claimId } = GetUploadUrlParams.parse(req.params);
     const bodyResult = GetUploadUrlBody.safeParse(req.body);
     if (!bodyResult.success) {
-      res.status(400).json({ error: "Missing credentials", message: "awsCredentials (accessKeyId, secretAccessKey, region, s3BucketName) are required." });
+      const issues = bodyResult.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join("; ");
+      res.status(400).json({ error: "Invalid request body", message: issues || "awsCredentials (accessKeyId, secretAccessKey, region, s3BucketName) are required." });
       return;
     }
     const body = bodyResult.data;

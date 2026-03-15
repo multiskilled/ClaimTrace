@@ -14,7 +14,8 @@ router.post("/claims/:claimId/analyze", async (req, res) => {
 
     const bodyResult = AnalyzeClaimBody.safeParse(req.body);
     if (!bodyResult.success) {
-      res.status(400).json({ error: "Missing credentials", message: "awsCredentials (accessKeyId, secretAccessKey, region, s3BucketName) are required." });
+      const issues = bodyResult.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join("; ");
+      res.status(400).json({ error: "Invalid request body", message: issues || "awsCredentials (accessKeyId, secretAccessKey, region, s3BucketName) are required." });
       return;
     }
     const { awsCredentials } = bodyResult.data;
